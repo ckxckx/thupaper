@@ -14,7 +14,7 @@
 %
 % \iffalse
 %<*driver>
-\ProvidesFile{thuthesis.dtx}[2022/03/19 7.2.4 Tsinghua University Thesis Template]
+\ProvidesFile{thuthesis.dtx}[2022/10/05 7.3.1 Tsinghua University Thesis Template]
 \documentclass{ltxdoc}
 \usepackage{dtx-style}
 
@@ -74,7 +74,7 @@
 % \item 本模板为作者根据
 %   清华大学研究生院颁发的《
 %    \href{http://yjsy.cic.tsinghua.edu.cn/docinfo/board/boarddetail.jsp?columnId=001050603&parentColumnId=0010506&itemSeq=5365}{%
-%   研究生学位论文写作指南}》（2021年6月版本，限校内网络访问）、
+%   研究生学位论文写作指南}》（更新到2022年5月版本，限校内网络访问）、
 %   英文版《Guide to Thesis Writing for Graduate Students》、
 %   清华大学教务处颁发的《
 %   \href{https://lib.tsinghua.edu.cn/info/1073/1978.htm}{%
@@ -379,8 +379,8 @@
 % \subsubsection{输出格式}
 % \DescribeOption{output}
 % 选择输出的格式是打印版还是电子版（用于提交），可选：\option{print}（默认）、\option{electronic}。
-% 一些院系要求提交的电子版不含空白页，但是这对打印并不友好，
-% 比如正文第一页可能会在左侧；以及一些部分需要单面打印，需要插入空白页。
+% 打印版 \option{print} 自动在单面打印的部分插入空白页（比如封面），并且保证正文第 1 页在右侧。
+% 电子版 \option{electronic} 选项会去掉空白页，这是因为一些院系要求提交的电子版不含空白页。
 % 注意在不同选项下，生成的声明页码很可能不同。为了避免页码错误，
 % \thuthesis{}将会在插入扫描的 PDF 文件时自动生成页码，因此\textbf{扫描声明页时请移除底部的页码}，以防重叠。
 %
@@ -670,9 +670,7 @@
 % \DescribeOption{toc-chapter-style}
 % 本科生《写作指南》关于目录章标题要求“目录从第 1 章开始，每章标题用黑体小四号字”，
 % 所以其中的西文和数字默认使用 Arial 字体，跟正文的章标题一致。
-% 但是论文样例\footnote{
-%   \url{http://www.law.tsinghua.edu.cn/publish/law/7024/2012/20120216153516317135347/20120216153516317135347_.html}
-% }的目录章标题的西文和数字却使用了 Times。
+% 但是论文样例\footnote{此前发布在法学院网站，目前已经无公开可获得的链接。}的目录章标题的西文和数字却使用了 Times。
 % 如果审查老师这样要求，需要在生成目录前设置
 % \begin{latex}
 %   \thusetup{
@@ -822,7 +820,7 @@
 %     uppercase-greek    = italic,
 %     less-than-or-equal = slanted,
 %     integral           = upright,
-%     integral-limits    = true,
+%     integral-limits    = false,
 %     partial            = upright,
 %     math-ellipsis      = centered,
 %     real-part          = roman,
@@ -1250,7 +1248,7 @@
 %    \begin{macrocode}
 %<cls>\NeedsTeXFormat{LaTeX2e}[2017/04/15]
 %<cls>\ProvidesClass{thuthesis}
-%<cls>[2022/03/19 7.2.4 Tsinghua University Thesis Template]
+%<cls>[2022/10/05 7.3.1 Tsinghua University Thesis Template]
 %    \end{macrocode}
 %
 % 报错
@@ -1288,7 +1286,9 @@
 %    \begin{macrocode}
 \RequirePackage{iftex}
 \ifXeTeX\else
-  \thu@error{XeLaTeX is required to compile this document}
+  \ifLuaTeX\else
+    \thu@error{XeLaTeX or LuaLaTeX is required to compile this document}
+  \fi
 \fi
 %    \end{macrocode}
 %
@@ -1306,7 +1306,7 @@
 %<*cls>
 \hyphenation{Thu-Thesis}
 \def\thuthesis{ThuThesis}
-\def\version{7.2.4}
+\def\version{7.3.1}
 \RequirePackage{kvdefinekeys}
 \RequirePackage{kvsetkeys}
 \RequirePackage{kvoptions}
@@ -1541,6 +1541,7 @@
       auto,
       windows,
       mac,
+      mac-word,
       noto,
       fandol,
       none,
@@ -1767,8 +1768,11 @@
 % 利用 \pkg{xeCJKfntef} 实现汉字的下划线和盒子内两段对齐，并可以避免
 % \cs{makebox}\oarg{width}\oarg{s} 可能产生的 underful boxes。
 %    \begin{macrocode}
-\RequirePackage{xeCJKfntef}
-\RequirePackage{soul}
+\ifXeTeX
+  \RequirePackage{xeCJKfntef}
+\else
+  \RequirePackage{ulem}
+\fi
 %    \end{macrocode}
 %
 % 表格控制
@@ -1935,7 +1939,7 @@
 %    \begin{macrocode}
 \newcommand\thu@set@chapter@names{%
   \ifthu@main@language@chinese
-    \def\thu@comments@name{指导教师学术评语}%
+    \def\thu@comments@name{指导教师评语}%
     \def\bibname{参考文献}%
     \def\appendixname{附录}%
     \def\indexname{索引}%
@@ -2061,8 +2065,20 @@
 %
 % 带圈数字和星号使用中文字体。
 %    \begin{macrocode}
-\xeCJKDeclareCharClass{CJK}{"2460 -> "2473}
-\xeCJKDeclareCharClass{CJK}{"2605}
+\ifLuaTeX
+  % ctex 将带圈数字 U+2460–U+24FF 归入字符范围 3（ALchar），这里改回范围 6（JAchar）
+  \ltjdefcharrange{3}{%
+    "2000-"243F, "2500-"27BF, "2900-"29FF, "2B00-"2BFF}
+  \ltjdefcharrange{6}{%
+    "2460-"24FF, "2E80-"2EFF, "3000-"30FF, "3190-"319F, "31F0-"4DBF,
+    "4E00-"9FFF, "F900-"FAFF, "FE10-"FE1F, "FE30-"FE6F, "FF00-"FFEF,
+    "1B000-"1B16F, "1F100-"1F2FF, "20000-"3FFFF, "E0100-"E01EF}
+\else
+  \ifXeTeX
+    \xeCJKDeclareCharClass{CJK}{"2460 -> "2473}
+    \xeCJKDeclareCharClass{CJK}{"2605}
+  \fi
+\fi
 %    \end{macrocode}
 %
 % \newcommand\unicodechar[1]{U+#1（\symbol{"#1}）}
@@ -2083,16 +2099,28 @@
 %    \begin{macrocode}
 \newcommand\thu@set@punctuations{%
   \ifthu@language@chinese
-    \xeCJKDeclareCharClass{FullLeft}{"2018, "201C}%
-    \xeCJKDeclareCharClass{FullRight}{
-      "00B7, "2019, "201D, "2013, "2014, "2025, "2026, "2E3A,
-    }%
+    \ifLuaTeX
+      \ltjsetparameter{jacharrange={+9}}
+    \else
+      \ifXeTeX
+        \xeCJKDeclareCharClass{FullLeft}{"2018, "201C}%
+        \xeCJKDeclareCharClass{FullRight}{
+          "00B7, "2019, "201D, "2013, "2014, "2025, "2026, "2E3A,
+        }%
+      \fi
+    \fi
   \else
     \ifthu@language@english
-      \xeCJKDeclareCharClass{HalfLeft}{"2018, "201C}%
-      \xeCJKDeclareCharClass{HalfRight}{
-        "00B7, "2019, "201D, "2013, "2014, "2025, "2026, "2E3A,
-      }%
+      \ifLuaTeX
+        \ltjsetparameter{jacharrange={-9}}
+      \else
+        \ifXeTeX
+          \xeCJKDeclareCharClass{HalfLeft}{"2018, "201C}%
+          \xeCJKDeclareCharClass{HalfRight}{
+            "00B7, "2019, "201D, "2013, "2014, "2025, "2026, "2E3A,
+          }%
+        \fi
+      \fi
     \fi
   \fi
 }
@@ -2208,6 +2236,9 @@
 %
 % 使用 \pkg{fontspec} 配置字体。
 %    \begin{macrocode}
+\newcommand\thu@mac@word@font@path{%
+  /Applications/Microsoft Word.app/Contents/Resources/DFonts/%
+}
 \ifthu@fontset@auto
   \ifthu@system@windows
     \thusetup{fontset = windows}
@@ -2215,15 +2246,19 @@
     \IfFontExistsTF{SimSun}{
       \thusetup{fontset = windows}
     }{
-      \ifthu@system@mac
-        \thusetup{fontset = mac}
-      \else
-        \IfFontExistsTF{Noto Serif CJK SC}{
-          \thusetup{fontset = ubuntu}
-        }{
-          \thusetup{fontset = fandol}
-        }
-      \fi
+      \IfFileExists{\thu@mac@word@font@path/SimSun.ttf}{
+        \thusetup{fontset = windows}
+      }{
+        \ifthu@system@mac
+          \thusetup{fontset = mac}
+        \else
+          \IfFontExistsTF{Noto Serif CJK SC}{
+            \thusetup{fontset = ubuntu}
+          }{
+            \thusetup{fontset = fandol}
+          }
+        \fi
+      }
     }
   \fi
 \fi
@@ -2487,13 +2522,30 @@
 %
 % \subsubsection{中文字体}
 %
+% 去掉“no requested script”警告。
+%    \begin{macrocode}
+\ExplSyntaxOn
+\@ifpackageloaded { xeCJK }
+  { \msg_redirect_name:nnn { fontspec } { no-script } { info } }
+  { }
+\ExplSyntaxOff
+%    \end{macrocode}
+%
 %    \begin{macrocode}
 \ifthu@cjk@font@auto
   \ifthu@fontset@mac
     \thusetup{cjk-font = mac}
   \else
     \ifthu@fontset@windows
-      \thusetup{cjk-font = windows}
+      \IfFontExistsTF{SimSun}{
+        \thusetup{cjk-font = windows}
+      }{
+        \IfFileExists{\thu@mac@word@font@path/SimSun.ttf}{
+          \thusetup{cjk-font = mac-word}
+        }{
+          \thu@error{Cannot find "SimSun" font}
+        }
+      }
     \else
       \ifthu@fontset@ubuntu
         \thusetup{cjk-font = noto}
@@ -2508,24 +2560,48 @@
 % Windows 的中易字体。
 %    \begin{macrocode}
 \newcommand\thu@set@cjk@font@windows{%
-  \xeCJKsetup{EmboldenFactor=3}%
   \setCJKmainfont{SimSun}[
-    AutoFakeBold = true,
+    AutoFakeBold = 3,
     ItalicFont   = KaiTi,
   ]%
-  \setCJKsansfont{SimHei}[AutoFakeBold]%
+  \setCJKsansfont{SimHei}[AutoFakeBold = 3]%
   \setCJKmonofont{FangSong}%
-  \setCJKfamilyfont{zhsong}{SimSun}[AutoFakeBold]%
-  \setCJKfamilyfont{zhhei}{SimHei}[AutoFakeBold]%
+  \setCJKfamilyfont{zhsong}{SimSun}[AutoFakeBold = 3]%
+  \setCJKfamilyfont{zhhei}{SimHei}[AutoFakeBold = 3]%
   \setCJKfamilyfont{zhkai}{KaiTi}%
   \setCJKfamilyfont{zhfs}{FangSong}%
+}
+%    \end{macrocode}
+%
+% macOS 的 Microsoft Word 字体。
+%    \begin{macrocode}
+\@namedef{thu@set@cjk@font@mac-word}{%
+  \setCJKmainfont{SimSun}[%
+    Path         = \thu@mac@word@font@path,
+    AutoFakeBold = 3,
+    ItalicFont   = KaiTi,
+  ]%
+  \setCJKsansfont{SimHei}[%
+    Path         = \thu@mac@word@font@path,
+    AutoFakeBold = 3,
+  ]%
+  \setCJKmonofont{FangSong}[Path=\thu@mac@word@font@path]%
+  \setCJKfamilyfont{zhsong}{SimSun}[%
+    Path         = \thu@mac@word@font@path,
+    AutoFakeBold = 3,
+  ]%
+  \setCJKfamilyfont{zhhei}{SimHei}[%
+    Path         = \thu@mac@word@font@path,
+    AutoFakeBold = 3,
+  ]%
+  \setCJKfamilyfont{zhkai}{KaiTi}[Path = \thu@mac@word@font@path]%
+  \setCJKfamilyfont{zhfs}{FangSong}[Path = \thu@mac@word@font@path]%
 }
 %    \end{macrocode}
 %
 % macOS 的华文字体。
 %    \begin{macrocode}
 \newcommand\thu@set@cjk@font@mac{%
-  \defaultCJKfontfeatures{}%
   \setCJKmainfont{Songti SC}[
     UprightFont    = * Light,
     BoldFont       = * Bold,
@@ -2562,30 +2638,19 @@
 % 注意 Noto CJK 的 regular 字重名字不带“Regular”。
 %    \begin{macrocode}
 \newcommand\thu@set@cjk@font@noto{%
-  \defaultCJKfontfeatures{}%
   \setCJKmainfont{Noto Serif CJK SC}[
     UprightFont    = * Light,
     BoldFont       = * Bold,
     ItalicFont     = FandolKai-Regular,
     ItalicFeatures = {Extension = .otf},
-    Script         = CJK,
   ]%
-  \setCJKsansfont{Noto Sans CJK SC}[
-    BoldFont       = * Medium,
-    Script         = CJK,
-  ]%
-  \setCJKmonofont{Noto Sans Mono CJK SC}[
-    Script         = CJK,
-  ]%
+  \setCJKsansfont{Noto Sans CJK SC}[BoldFont = * Medium]%
+  \setCJKmonofont{Noto Sans Mono CJK SC}%
   \setCJKfamilyfont{zhsong}{Noto Serif CJK SC}[
     UprightFont    = * Light,
     UprightFont    = * Bold,
-    Script         = CJK,
   ]%
-  \setCJKfamilyfont{zhhei}{Noto Sans CJK SC}[
-    BoldFont       = * Medium,
-    Script         = CJK,
-  ]%
+  \setCJKfamilyfont{zhhei}{Noto Sans CJK SC}[BoldFont = * Medium]%
   \setCJKfamilyfont{zhfs}{FandolFang}[
     Extension      = .otf,
     UprightFont    = *-Regular,
@@ -2600,7 +2665,6 @@
 % Fandol 字体。
 %    \begin{macrocode}
 \newcommand\thu@set@cjk@font@fandol{%
-  \defaultCJKfontfeatures{}%
   \setCJKmainfont{FandolSong}[
     Extension   = .otf,
     UprightFont = *-Regular,
@@ -2668,19 +2732,20 @@
     \thusetup{
       uppercase-greek = italic,
       integral        = upright,
-      integral-limits = true,
       partial         = upright,
       real-part       = roman,
     }%
     \ifthu@math@style@ISO
       \thusetup{
         less-than-or-equal = horizontal,
+        integral-limits    = true,
         math-ellipsis      = lower,
       }%
     \else
       \ifthu@math@style@GB
         \thusetup{
           less-than-or-equal = slanted,
+          integral-limits    = false,
           math-ellipsis      = centered,
         }%
       \fi
@@ -3187,7 +3252,6 @@
 %    \begin{macrocode}
 \ctexset{%
   punct=quanjiao,
-  space=auto,
 }
 \newcommand\thu@set@indent{%
   \ifthu@main@language@chinese
@@ -3254,6 +3318,13 @@
 %
 % \subsubsection{脚注}
 % \label{sec:footnote}
+%
+% 严格禁止脚注跨页，参考 \href{https://github.com/tuna/thuthesis/issues/778}{\#778}
+% 和 \url{https://texfaq.org/FAQ-splitfoot}。
+%    \begin{macrocode}
+\interfootnotelinepenalty=10000
+%    \end{macrocode}
+%
 % 脚注内容采用小五号字，中文用宋体，英文和数字用 Times New Roman 体按两端对齐格式书写，
 % 单倍行距，段前段后均空 0 磅。
 % 脚注的序号按页编排，不同页的脚注序号不需要连续。
@@ -3593,21 +3664,17 @@
     numberformat = {},
     titleformat  = {},
     fixskip      = true,
-    aftername    = \quad,
     afterindent  = true,
     lofskip      = 0pt,
     lotskip      = 0pt,
   },
   section = {
-    aftername    = \quad,
     afterindent  = true,
   },
   subsection = {
-    aftername    = \quad,
     afterindent  = true,
   },
   subsubsection = {
-    aftername    = \quad,
     afterindent  = true,
   },
   paragraph/afterindent = true,
@@ -3636,21 +3703,25 @@
     \ctexset{%
       chapter = {
         format     = \centering\sffamily\fontsize{15bp}{20bp}\selectfont,
+        aftername  = \quad,
         beforeskip = 30bp,
         afterskip  = 20bp,
       },
       section = {
         format     = \sffamily\fontsize{14bp}{18bp}\selectfont,
+        aftername  = \quad,
         beforeskip = 25bp,
         afterskip  = 12bp,
       },
       subsection = {
         format     = \sffamily\fontsize{13bp}{15bp}\selectfont,
+        aftername  = \quad,
         beforeskip = 12bp,
         afterskip  = 6bp,
       },
       subsubsection = {
         format     = \sffamily\fontsize{12bp}{14bp}\selectfont,
+        aftername  = \quad,
         beforeskip = 12bp,
         afterskip  = 6bp,
       },
@@ -3700,43 +3771,6 @@
 % 由于 Word 的行距算法不同，这里进行了一些调整使得视觉上更接近。
 %    \begin{macrocode}
   \else
-    \ifthu@main@language@chinese
-      \ctexset{%
-        chapter = {
-          format      = \centering\sffamily\sanhao,
-          nameformat  = {},
-          titleformat = {},
-          name        = {第,章},
-        },
-        section = {
-          format     = \sffamily\fontsize{14bp}{20bp}\selectfont,
-        },
-        subsection = {
-          format     = \sffamily\fontsize{13bp}{20bp}\selectfont,
-        },
-        subsubsection = {
-          format     = \sffamily\fontsize{12bp}{20bp}\selectfont,
-        },
-      }%
-    \else
-      \ctexset{%
-        chapter = {
-          format      = \centering\sffamily\bfseries\fontsize{16bp}{20bp}\selectfont,
-          nameformat  = \MakeUppercase,
-          titleformat = \MakeUppercase,
-          name        = \chaptername\space,
-        },
-        section = {
-          format     = \sffamily\bfseries\fontsize{14bp}{20bp}\selectfont,
-        },
-        subsection = {
-          format     = \sffamily\bfseries\fontsize{13bp}{20bp}\selectfont,
-        },
-        subsubsection = {
-          format     = \sffamily\bfseries\fontsize{12bp}{20bp}\selectfont,
-        },
-      }%
-    \fi
     \ctexset{%
       chapter = {
         beforeskip = 27bp,
@@ -3756,6 +3790,51 @@
         afterskip  = 6bp,
       },
     }%
+    \ifthu@main@language@chinese
+      \ctexset{%
+        chapter = {
+          format      = \centering\sffamily\sanhao,
+          nameformat  = {},
+          titleformat = {},
+          name        = {第,章},
+          aftername   = \quad,
+        },
+        section = {
+          format     = \sffamily\fontsize{14bp}{20bp}\selectfont,
+          aftername  = \quad,
+        },
+        subsection = {
+          format     = \sffamily\fontsize{13bp}{20bp}\selectfont,
+          aftername  = \quad,
+        },
+        subsubsection = {
+          format     = \sffamily\fontsize{12bp}{20bp}\selectfont,
+          aftername  = \quad,
+        },
+      }%
+    \else
+      \ctexset{%
+        chapter = {
+          format      = \centering\sffamily\bfseries\fontsize{16bp}{20bp}\selectfont,
+          nameformat  = \MakeUppercase,
+          titleformat = \MakeUppercase,
+          name        = \chaptername\space,
+          aftername   = \space,
+        },
+        section = {
+          format     = \sffamily\bfseries\fontsize{14bp}{20bp}\selectfont,
+          aftername  = \space,
+        },
+        subsection = {
+          format     = \sffamily\bfseries\fontsize{13bp}{20bp}\selectfont,
+          aftername  = \space,
+        },
+        subsubsection = {
+          format     = \sffamily\bfseries\fontsize{12bp}{20bp}\selectfont,
+          aftername  = \space,
+        },
+      }%
+    \fi
   \fi
 }
 \thu@set@section@format
@@ -3953,7 +4032,7 @@
     \else
       \titlecontents{chapter}
         [\z@]{\addvspace{6bp}\heiti}
-        {\contentspush{\MakeUppercase{\thecontentslabel}\quad}\MakeUppercase}{\MakeUppercase}
+        {\contentspush{\MakeUppercase{\thecontentslabel}\space}\MakeUppercase}{\MakeUppercase}
         {\rmfamily\thu@leaders\thecontentspage}%
       \titlecontents{section}
         [1em]{}
@@ -4133,17 +4212,22 @@
 \newcommand\thu@date@en@short[3]{\thu@date@month{#2}, #1}
 %    \end{macrocode}
 %
-% 下划线命令
+% 下划线命令。
+% \pkg{ulem} 的下划线 \cs{uline} 可以控制粗细和深度。
 %    \begin{macrocode}
 \newcommand\thu@underline[2][6em]{\hskip1pt\underline{\hb@xt@ #1{\hss#2\hss}}\hskip3pt}
-\newcommand\thu@CJKunderline[2][6em]{\CJKunderline*{\hb@xt@ #1{\hss#2\hss}}}
+\newcommand\thu@uline[2][6em]{\uline{\hb@xt@ #1{\hss#2\hss}}}
 %    \end{macrocode}
 %
 % 将内容拉伸或压缩到固定宽度。
 %    \begin{macrocode}
 \newcommand\thu@fixed@box[2]{%
   \begingroup
-    \def\CJKglue{\hskip 0pt plus 2filll minus 1filll}%
+    \ifLuaTeX
+      \ltjsetparameter{kanjiskip = {0pt plus 2filll minus 1filll}}%
+    \else
+      \renewcommand\CJKglue{\hspace{0pt plus 2filll minus 1filll}}%
+    \fi
     \makebox[#1][l]{#2}%
   \endgroup
 }
@@ -4156,7 +4240,11 @@
   \sbox\thu@stretch@box{#2}%
   \ifdim \wd\thu@stretch@box < #1\relax
     \begingroup
-      \def\CJKglue{\hskip 0pt plus 2filll}%
+      \ifLuaTeX
+        \ltjsetparameter{kanjiskip = {0pt plus 2filll}}%
+      \else
+        \renewcommand\CJKglue{\hspace{0pt plus 2filll}}%
+      \fi
       \makebox[#1][l]{#2}%
     \endgroup
   \else
@@ -4379,8 +4467,14 @@
     \thu@titlepage@degree
     \vfill
     \parbox[t][8.5cm][t]{\textwidth}{%
-      \centering\CJKfamily+{}%
-      \centering\fangsong\sanhao[1.95]%
+      \centering
+      \fangsong
+      \ifLuaTeX
+        \fontspec{\CJK@family}%
+      \else
+        \CJKfamily+{}%
+      \fi
+      \sanhao[1.95]%
       \thu@titlepage@info
     }\par
     \parbox[t][2.5cm][t]{\textwidth}{\centering\thu@titlepage@date}\par
@@ -4415,8 +4509,14 @@
 %    \begin{macrocode}
 \newcommand\thu@titlepage@degree{%
   \begingroup
-    \CJKfamily+{}\xiaoer
-    \def\CJKglue{\hskip 1bp}%
+    \xiaoer
+    \ifLuaTeX
+      \fontspec{\CJK@family}%
+      \ltjsetparameter{kanjiskip = {1bp}}%
+    \else
+      \CJKfamily+{}%
+      \renewcommand\CJKglue{\hspace{1bp}}%
+    \fi
     \ifthu@thesis@type@thesis
       (申请清华大学\thu@degree@name
       \ifthu@degree@type@professional
@@ -4540,7 +4640,11 @@
 \newcommand\thu@titlepage@date{%
   \begingroup
     \sanhao
-    \def\CJKglue{\hskip 1bp}%
+    \ifLuaTeX
+      \ltjsetparameter{kanjiskip = {1bp}}%
+    \else
+      \renewcommand\CJKglue{\hspace{1bp}}%
+    \fi
     \thu@format@date{\thu@date@zh@short}{\thu@date}\par
   \endgroup
 }
@@ -4632,7 +4736,7 @@
   \fi
 }
 \newcommand\thu@titlepage@en@degree{%
-  \thu@thesis@name@en{} Submitted to\par
+  \thu@thesis@name@en{} submitted to\par
   {\bfseries Tsinghua University\par}%
   in partial fulfillment of the requirement\par
   for the
@@ -4700,22 +4804,23 @@
   \vskip 1.8cm%
   \begingroup
     \heiti
-    \ifthu@main@language@chinese
-      \yihao[1.56]%
-    \else
-      \fontsize{26bp}{32bp}\selectfont
-    \fi
-    \parindent=18bp%
-    \hangindent=72bp%
-    \makebox[54bp]{\xiaoer[1.2]题目：}%
-    \CJKunderline*[skip=false, thickness=0.05em, depth=0.12em]{\thu@title}%
-    \ifthu@main@language@english
-      \\
-      \thusetup{language=english}%
-      \ul\thu@title@en
-      \thusetup{language=chinese}%
-    \fi
-    \par
+    % 21.0cm - 0.2cm - 3cm * 2 - 18bp * 4 = 347bp
+    \noindent\hspace{1em}\makebox[54bp]{\xiaoer[1.2]题目：}%
+    \parbox[t]{347bp}{%
+      \ifthu@main@language@chinese
+        \yihao[1.56]%
+      \else
+        \fontsize{26bp}{32bp}\selectfont
+      \fi
+      \renewcommand\ULthickness{0.05em}%
+      \renewcommand\ULdepth{0.17em}%
+      \expandafter\uline\expandafter{\thu@title}\par
+      \ifthu@main@language@english
+        \thusetup{language=english}%
+        \expandafter\uline\expandafter{\thu@title@en}\par
+        \thusetup{language=chinese}%
+      \fi
+    }\par
   \endgroup
   \vskip 1.9cm%
   \begingroup
@@ -4746,7 +4851,12 @@
   \vskip 1.4cm%
   \begingroup
     \centering
-    {\CJKfamily+{}\xiaosi\thu@format@date{\thu@date@zh@digit}{\thu@date}\par}%
+    \ifLuaTeX
+      \fontspec{\CJK@family}%
+    \else
+      \CJKfamily+{}%
+    \fi
+    \xiaosi\thu@format@date{\thu@date@zh@digit}{\thu@date}\par
   \endgroup
   \vfill
   \clearpage
@@ -4774,20 +4884,23 @@
     }%
     \vskip 0.2cm%
     \parbox[t][4.0cm][c]{\textwidth}{%
-      \centering\sihao[3.46]\CJKunderline*[depth=1em]{\thu@title}\par
+      \centering\sihao[3.46]%
+      \renewcommand\ULdepth{1em}%
+      \expandafter\uline\expandafter{\thu@title}\par
     }\par
     \vskip 0.4cm%
     {\xiaosi\thu@author\par}%
     \vskip 1.4cm%
-    {\xiaosi[1.58]\xeCJKsetup{underline/depth=0.9em}%
+    {\xiaosi[1.58]%
+      \renewcommand\ULdepth{0.9em}%
       工作完成日期\quad
-      \thu@CJKunderline[5.9cm]{%
+      \thu@uline[5.9cm]{%
         \thu@format@date{\thu@date@zh@digit@short}{\thu@start@date}—%
         \thu@format@date{\thu@date@zh@digit@short}{\thu@end@date}
       }\par
       \vskip 0.55cm%
       报告提交日期\quad
-      \thu@CJKunderline[5.9cm]{\thu@format@date{\thu@date@zh@digit@short}{\thu@date}}\par
+      \thu@uline[5.9cm]{\thu@format@date{\thu@date@zh@digit@short}{\thu@date}}\par
     }%
     \vskip 0.45cm%
     {\xiaosi[2]{\ziju{1}清华大学}\quad （北京）\par}%
@@ -4854,26 +4967,29 @@
     \kvsetkeys{thu@committee}{#1}%
     \ifx\thu@committee@file\@empty
       \begingroup
-        \ifthu@main@language@english
-          \ctexset{chapter/format=\centering\sffamily\fontsize{16bp}{20bp}\selectfont}
-        \fi
+        \ctexset{
+          chapter = {
+            format    = \centering\sffamily\fontsize{16bp}{20bp}\selectfont,
+            afterskip = 49bp,
+          },
+          section = {
+            beforeskip  =  26bp,
+            afterskip   =  9.5bp,
+            format      += \centering,
+            numbering   =  false,
+            afterindent =  false,
+          },
+        }%
         \thu@chapter*[]{\thu@committee@name}%
+        \thispagestyle{empty}%
+        \thusetup{language=chinese}%
+        \BODY\clearpage
+        \thu@reset@main@language
       \endgroup
     \else
       \thu@pdfbookmark{0}{\thu@committee@name}%
       \includepdf{\thu@committee@file}%
     \fi
-    \thispagestyle{empty}%
-    \ctexset{
-      section = {
-        format    += {\centering},
-        numbering = false,
-        afterindent = false,
-      },
-    }%
-    \thusetup{language=chinese}
-    \BODY\clearpage
-    \thu@reset@main@language
   \fi
 }
 %    \end{macrocode}
@@ -5852,18 +5968,49 @@
 % 造成 \env{survey} 的子目录中 |tocdepth| 为 0。
 %    \begin{macrocode}
 \thu@option@hook{toc-depth}{%
-  \protected@write\@auxout{}{%
-    \string\ttl@writefile{toc}{%
-      \protect\setcounter{tocdepth}{\thu@toc@depth}%
+  \ifx\@begindocumenthook\@undefined
+    \protected@write\@auxout{}{%
+      \string\ttl@writefile{toc}{%
+        \protect\setcounter{tocdepth}{\thu@toc@depth}%
+      }%
     }%
-  }%
-  \addtocontents{lof}{\string\let\string\contentsline\string\ttl@gobblecontents}
-  \addtocontents{lot}{\string\let\string\contentsline\string\ttl@gobblecontents}
-  \addtocontents{loe}{\string\let\string\contentsline\string\ttl@gobblecontents}
+  \else
+    \setcounter{tocdepth}{\thu@toc@depth}%
+  \fi
 }
 \g@addto@macro\appendix{%
   \thusetup{
     toc-depth = 0,
+  }%
+}
+%    \end{macrocode}
+%
+% 附录中的图、表不列入插图清单/附表清单。
+%    \begin{macrocode}
+\thu@define@key{
+  appendix-figure-in-lof = {
+    name = appendix@figure@in@lof,
+    choices = {
+      true,
+      false,
+    },
+    default = false,
+  },
+}
+\thu@option@hook{appendix-figure-in-lof}{%
+  \ifthu@appendix@figure@in@lof@true
+    \addtocontents{lof}{\string\let\string\contentsline\string\ttl@contentsline}%
+    \addtocontents{lot}{\string\let\string\contentsline\string\ttl@contentsline}%
+    \addtocontents{loe}{\string\let\string\contentsline\string\ttl@contentsline}%
+  \else
+    \addtocontents{lof}{\string\let\string\contentsline\string\ttl@gobblecontents}%
+    \addtocontents{lot}{\string\let\string\contentsline\string\ttl@gobblecontents}%
+    \addtocontents{loe}{\string\let\string\contentsline\string\ttl@gobblecontents}%
+  \fi
+}
+\g@addto@macro\appendix{%
+  \thusetup{
+    appendix-figure-in-lof = false,
   }%
 }
 %    \end{macrocode}
@@ -6047,16 +6194,49 @@
       format    += \centering,
       numbering = false,
     },
-    subsection = {
-      format     = \sffamily\fontsize{14bp}{20bp}\selectfont,
-      numbering  = false,
-      aftertitle = \ifthu@language@chinese ：\else :\fi,
-    },
   }%
-  \ifthu@degree@bachelor
-    \ifthu@language@english
-      \sffamily\fontsize{15bp}{20bp}\selectfont,
+  \ifthu@language@chinese
+    \ctexset{
+      subsection = {
+        format     = \sffamily\fontsize{14bp}{20bp}\selectfont,
+        numbering  = false,
+        aftertitle = ：,
+      },
+    }%
+    \ifthu@degree@graduate
+      \fontsize{12bp}{16bp}\selectfont
     \fi
+    \setlist[achievements]{
+      topsep      = 6bp,
+      itemsep     = 6bp,
+      leftmargin  = 1cm,
+      labelwidth  = 1cm,
+      labelsep    = 0pt,
+      align       = left,
+      label       = [\arabic*],
+    }%
+  \else
+    \ctexset{
+      subsection = {
+        beforeskip = 0pt,
+        afterskip  = 0pt,
+        format     = \bfseries\normalsize,
+        indent     = \parindent,
+        numbering  = false,
+      },
+    }%
+    \ifthu@degree@bachelor
+      % 内容部分用Arial字体，字号15pt，行距采用固定值20pt， 段前后 0pt。
+      \sffamily\fontsize{15bp}{20bp}\selectfont
+    \fi
+    \setlist[achievements]{
+      topsep      = 0bp,
+      itemsep     = 0bp,
+      leftmargin  = 1.75cm,
+      labelsep    = 0.5cm,
+      align       = right,
+      label       = [\arabic*],
+    }%
   \fi
 }{}
 %    \end{macrocode}
@@ -6077,19 +6257,14 @@
 %    \begin{macrocode}
 \newlist{achievements}{enumerate}{1}
 \setlist[achievements]{
-  label      = [\arabic*],
-  align      = left,
-  leftmargin = 10mm,
   topsep     = 6bp,
-  parsep     = 0bp,
   partopsep  = 0bp,
   itemsep    = 6bp,
-  labelsep   = !,
-  before     = {
-    \ifthu@degree@graduate
-      \fontsize{12bp}{16bp}\selectfont
-    \fi
-  },
+  parsep     = 0bp,
+  leftmargin = 10mm,
+  itemindent = 0pt,
+  align      = left,
+  label      = [\arabic*],
   resume     = achievements,
 }
 %    \end{macrocode}
@@ -6332,7 +6507,7 @@
       %     \itshape
       % #1\@addpunct{.}]\ignorespaces
       \sffamily
-      #1\@addpunct{\thu@theorem@separator}]\ignorespaces
+      #1]\ignorespaces
   }{%
     \popQED\endtrivlist\@endpefalse
   }

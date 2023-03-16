@@ -6,6 +6,39 @@
 
 ## [Unreleased]
 
+## [v7.3.1] - 2022-10-05
+
+### Added
+
+- 增加选项 `appendix-figure-in-lof` 控制附录中的图/表是否列入插图清单/附表清单。
+
+### Changed
+
+- 修改“指导教师/小组评语”章节的名称，同步《指南》2022 年 9 月版的修改。
+
+### Fixed
+
+- 修正答辩委员会名单页的行距。
+- 修复导言区中设置 `toc-depth` 导致空白插图清单的 bug。
+
+## [v7.3.0] - 2022-05-17
+
+### Added
+
+- 新增 LuaTeX 支持（试验性）（[#771](https://github.com/tuna/thuthesis/issues/771)）。
+
+### Changed
+
+- 研究生英文版目录中的标签分隔符由 `\quad` 改为空格（[#759](https://github.com/tuna/thuthesis/discussions/759)）。
+- 研究生英文版章节标题的标签分隔符由 `\quad` 改为空格（[#759](https://github.com/tuna/thuthesis/discussions/759)）。
+- 研究生英文封面的“Submitted”改为小写，同步《指南》2022 年 5 月版的修改。
+- 更改示例文档中 `longtable` 的“续表”标题格式，同步《指南》2021 年 6 月版的修改（[#766](https://github.com/tuna/thuthesis/issues/766)）。
+
+### Fixed
+
+- 修正英文版研究成果的格式（[#755](https://github.com/tuna/thuthesis/issues/755)）。
+- 修复脚注内容可能跨页的问题（[#778](https://github.com/tuna/thuthesis/issues/778)）。
+
 ## [v7.2.4] - 2022-03-19
 
 ### Added
@@ -884,7 +917,9 @@
 
 
 
-[Unreleased]: https://github.com/tuna/thuthesis/compare/v7.2.4...HEAD
+[Unreleased]: https://github.com/tuna/thuthesis/compare/v7.3.1...HEAD
+[v7.3.1]:     https://github.com/tuna/thuthesis/compare/v7.3.0...v7.3.1
+[v7.3.0]:     https://github.com/tuna/thuthesis/compare/v7.2.4...v7.3.0
 [v7.2.4]:     https://github.com/tuna/thuthesis/compare/v7.2.3...v7.2.4
 [v7.2.3]:     https://github.com/tuna/thuthesis/compare/v7.2.2...v7.2.3
 [v7.2.2]:     https://github.com/tuna/thuthesis/compare/v7.2.1...v7.2.2
